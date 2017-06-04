@@ -118,6 +118,7 @@ class ErmBuffer
       @list_count     = 0
       @cond_stack     = []
       @plit_stack     = []
+      @current_line   = []
 
       catch :parse_complete do
         super
@@ -142,8 +143,14 @@ class ErmBuffer
 
     def realadd sym, tok, len
       if sym == :indent
-        pos = @count + len
-        @indent_stack << tok << pos if pos.between? @point_min, @point_max
+        pos =
+          if tok == :bi && @current_line.map(&:first).uniq.sort == [:ident, :sp]
+            first_ident = @current_line.find { |s, _| s == :ident }
+            first_ident.last + len
+          else
+            @count + len
+          end
+        @indent_stack << tok[0].to_sym << pos if pos.between? @point_min, @point_max
 
         return
       end
@@ -157,6 +164,8 @@ class ErmBuffer
       return if pos < @point_min
       start = @point_min if start < @point_min
       pos = @point_max   if pos   > @point_max
+
+      @current_line << [sym, start]
 
       idx = FONT_LOCK_NAMES[sym]
 
@@ -283,6 +292,7 @@ class ErmBuffer
 
       @cond_stack.pop if @cond_stack.last
       @statment_start = true
+      @current_line = []
 
       r
     end
@@ -370,7 +380,7 @@ class ErmBuffer
         when *POSTCOND_KW then
           last_add = :cont
         when *INDENT_KW then
-          indent :b
+          indent :bi
         when *BACKDENT_KW then
           indent :s if @statment_start
         end

@@ -99,3 +99,21 @@
    "x\n{\na: a,\nb: b\n}"
    (indent-region (point-min) (point-max))
    (buffer-should-equal "x\n{\n a: a,\n b: b\n}")))
+
+(ert-deftest enh-ruby-indent-def-after-cmd ()
+  (with-temp-enh-rb-string
+   "decorator def foo\nx\n"
+   (indent-region (point-min) (point-max))
+   (buffer-should-equal "decorator def foo\n  x\n")))
+
+(ert-deftest enh-ruby-indent-def-after-private-class-method ()
+  (with-temp-enh-rb-string
+   "class Foo\n  private_class_method def foo\nx\n"
+   (indent-region (point-min) (point-max))
+   (buffer-should-equal "class Foo\n  private_class_method def foo\n    x\n")))
+
+(ert-deftest enh-ruby-indent-if-after-cmd-is-illegal ()
+  (with-temp-enh-rb-string
+   "meth if foo\nx\nelse\ny\nend\n"
+   (indent-region (point-min) (point-max))
+   (buffer-should-equal "meth if foo\nx\nelse\n  y\n  end\n")))
